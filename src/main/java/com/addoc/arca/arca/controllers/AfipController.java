@@ -2,13 +2,13 @@ package com.addoc.arca.arca.controllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.addoc.arca.arca.dto.InvoiceValidationResult;
 import com.addoc.arca.arca.services.AfipInvoiceValidatorService;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/afip")
@@ -21,8 +21,7 @@ public class AfipController {
     }
 
     /**
-     * 🔹 Valida un comprobante ante AFIP WSFEv1 usando WSAA para autenticación automática.
-     * Ejemplo: GET /api/afip/validate?cuit=20123456789&tipo=1&ptoVta=1&nro=1234
+     * 🔹 Valida un comprobante ante AFIP WSFEv1 usando WSAA.
      */
     @GetMapping("/validate")
     public ResponseEntity<InvoiceValidationResult> validateInvoice(
@@ -44,13 +43,44 @@ public class AfipController {
     }
 
     /**
-     * 🔹 Endpoint simple para probar conectividad con AFIP WSFEv1 (Dummy)
-     * GET /api/afip/dummy
+     * 🔹 Valida un comprobante a partir de su QR público.
+     * Ejemplo:
+     * GET /api/afip/validate-qr?qr=https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsIm...
+     */
+    @GetMapping("/validate-qr")
+    public ResponseEntity<?> validateQr(@RequestParam String qr) {
+        try {
+            JsonNode data = validatorService.validateQr(qr);
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+ * 🔹 Decodifica localmente un QR de AFIP sin conexión.
+ * Ejemplo:
+ * GET /api/afip/decode-qr?qr=https://www.afip.gob.ar/fe/qr/?p=...
+ */
+@GetMapping("/decode-qr")
+public ResponseEntity<?> decodeQr(@RequestParam String qr) {
+    try {
+        JsonNode data = validatorService.validateQrOffline(qr);
+        return ResponseEntity.ok(data);
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
+    }
+}
+
+
+    /**
+     * 🔹 Endpoint dummy para probar conectividad WSFEv1
      */
     @GetMapping("/dummy")
     public ResponseEntity<String> dummy() {
         try {
-            // ✅ Usa la llamada raw, que no depende de JAXB
             InvoiceValidationResult result = validatorService.validateInvoice("20123456789", 1, 1, 1234);
             return ResponseEntity.ok("✅ Dummy AFIP WSFEv1: " + result);
         } catch (Exception e) {
