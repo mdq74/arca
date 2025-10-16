@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jaxws:bindings
+    xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    wsdlLocation="https://wsaahomo.afip.gov.ar/ws/services/LoginCms?WSDL">
+
+    <!-- Renombra el portType para evitar colisión -->
+    <jaxws:bindings node="wsdl:definitions/wsdl:portType[@name='LoginCMS']">
+        <jaxws:class name="LoginCMSPortType"/>
+    </jaxws:bindings>
+
+</jaxws:bindings>
