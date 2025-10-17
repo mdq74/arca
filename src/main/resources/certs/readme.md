@@ -19,11 +19,21 @@ Vas a Administración de Certificados Digitales → seleccionás tu alias técni
 
 Subís el CSR (arca-java.csr).
 
-Descargás el .cer emitido.
+Descargás el .crt emitido y validar las huellas deben coincidir
+openssl x509 -noout -modulus -in validarcae_62e86fd805ab32f0.crt | openssl md5
+openssl rsa  -noout -modulus -in arca-java.key | openssl md5
+
+diego.marsili@NT-32728 MINGW64 /c/git/arca/arca/src/main/resources/certs (master)
+$ openssl x509 -noout -modulus -in validarcae_62e86fd805ab32f0.crt | openssl md5
+MD5(stdin)= 0c9776522010d1144d68fc454586d7d8
+
+diego.marsili@NT-32728 MINGW64 /c/git/arca/arca/src/main/resources/certs (master)
+$ openssl rsa  -noout -modulus -in arca-java.key | openssl md5
+MD5(stdin)= 0c9776522010d1144d68fc454586d7d8
 
 Combinar el nuevo .cer con la clave privada
 
-openssl pkcs12 -export -in arca-java.cer -inkey arca-java.key -out arca-java.p12
+openssl pkcs12 -export -inkey arca-java.key -in validarcae_62e86fd805ab32f0.crt -out arca-java.pfx -name "arca" -password pass:AddocArca2025!
 
 Configurar tu aplicación Java
 En tu app Java (cliente del web service AFIP, ej. WSFEv1):
