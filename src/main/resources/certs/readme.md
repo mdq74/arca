@@ -23,22 +23,18 @@ Descargás el .crt emitido y validar las huellas deben coincidir
 openssl x509 -noout -modulus -in validarcae_62e86fd805ab32f0.crt | openssl md5
 openssl rsa  -noout -modulus -in arca-java.key | openssl md5
 
-diego.marsili@NT-32728 MINGW64 /c/git/arca/arca/src/main/resources/certs (master)
-$ openssl x509 -noout -modulus -in validarcae_62e86fd805ab32f0.crt | openssl md5
-MD5(stdin)= 0c9776522010d1144d68fc454586d7d8
+Unir certificados
+En 1 solo archivo unir el crt que se baja de afip con los pem de AFIPRoot y Computadores
 
-diego.marsili@NT-32728 MINGW64 /c/git/arca/arca/src/main/resources/certs (master)
-$ openssl rsa  -noout -modulus -in arca-java.key | openssl md5
-MD5(stdin)= 0c9776522010d1144d68fc454586d7d8
+openssl pkcs12 -export -inkey arca-java.key -in addoc_completo.pem -out arca-java.p12 -name "arca" -password pass:AddocArca2025!
 
-Combinar el nuevo .cer con la clave privada
+Validar salida
+openssl pkcs12 -info -in arca-java.p12 -nokeys
 
-openssl pkcs12 -export -inkey arca-java.key -in validarcae_62e86fd805ab32f0.crt -out arca-java.pfx -name "arca" -password pass:AddocArca2025!
 
 Configurar tu aplicación Java
-En tu app Java (cliente del web service AFIP, ej. WSFEv1):
-
-System.setProperty("javax.net.ssl.keyStore", "ruta/arca-java.p12");
-System.setProperty("javax.net.ssl.keyStorePassword", "tu_pass");
-System.setProperty("javax.net.ssl.keyStoreType", "PKCS12");
-
+wsaa.service=wsfe
+wsaa.p12Path=src/main/resources/certs/arca-java.pfx
+wsaa.p12Password=AddocArca2025!
+wsaa.p12Alias=arca
+wsaa.renewMinutesBeforeExpiry=10

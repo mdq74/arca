@@ -21,7 +21,7 @@ public class AfipInvoiceValidatorService {
 
     private final WsaaClient wsaaClient;
 
-    private static final String WSDL_URL = "https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL";
+    private static final String WSDL_URL = "https://wsw.afip.gov.ar/wsfev1/service.asmx?WSDL";
     private static final String NAMESPACE_URI = "http://ar.gov.afip.dif.FEV1/";
     private static final String SERVICE_NAME = "Service";
     private static final String AFIP_QR_BASE_URL = "https://www.afip.gob.ar/fe/qr/";
