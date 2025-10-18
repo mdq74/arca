@@ -80,6 +80,7 @@ public class WsaaClient {
     }
 
     /** 🔹 LoginCms: obtiene Token & Sign del WSAA */
+    /** 🔹 LoginCms: obtiene Token & Sign del WSAA (maneja Fault SOAP) */
     public WsaaAuth loginCms() {
         try {
             if (p12Path == null || p12Path.isBlank()) {
@@ -91,26 +92,30 @@ public class WsaaClient {
                 return dummy;
             }
 
-            //disableSslVerification();
-
             String tra = WsaaCrypto.buildTRA(service, 12 * 60);
             String cmsB64 = WsaaCrypto.signCmsDetachedBase64(tra, p12Path, p12Password, p12Alias);
 
             log.info("📤 Enviando LoginCms a AFIP: {}", endpoint);
 
             SOAPMessage req = buildSoapLoginCms(cmsB64);
-
-            // 🩵 FIX: agregar cabecera SOAPAction
             req.getMimeHeaders().addHeader("SOAPAction", "loginCms");
 
             SOAPConnection con = SOAPConnectionFactory.newInstance().createConnection();
             SOAPMessage resp = con.call(req, endpoint);
             con.close();
 
+            // --- Capturamos toda la respuesta en texto para diagnóstico
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             resp.writeTo(out);
             String xmlResp = out.toString(StandardCharsets.UTF_8);
             log.info("📥 Respuesta WSAA:\n{}", xmlResp);
+
+            // --- Si contiene un Fault SOAP, lo procesamos
+            if (xmlResp.contains("<soapenv:Fault") || xmlResp.contains("<faultstring>")) {
+                String fault = extractFaultString(xmlResp);
+                log.error("❌ WSAA devolvió Fault SOAP: {}", fault);
+                throw new RuntimeException("Error en WSAA: " + (fault != null ? fault : "Fault SOAP desconocido"));
+            }
 
             SOAPBody body = resp.getSOAPBody();
             if (body == null || body.getFirstChild() == null) {
@@ -128,6 +133,27 @@ public class WsaaClient {
             log.error("❌ WSAA LoginCms error", e);
             throw new RuntimeException("WSAA LoginCms error: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 🔍 Extrae el contenido del nodo <faultstring>...</faultstring> de una
+     * respuesta SOAP.
+     */
+    private static String extractFaultString(String soapResponse) {
+        if (soapResponse == null || soapResponse.isBlank()) {
+            return null;
+        }
+        try {
+            int start = soapResponse.indexOf("<faultstring>");
+            int end = soapResponse.indexOf("</faultstring>");
+            if (start != -1 && end != -1 && end > start) {
+                String content = soapResponse.substring(start + "<faultstring>".length(), end);
+                return content.trim();
+            }
+        } catch (Exception e) {
+            // fallback silencioso
+        }
+        return null;
     }
 
     /** 🧩 Crea el SOAPMessage para loginCms */
