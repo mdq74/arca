@@ -183,42 +183,6 @@
       </plugin>
 
       <!-- 🪄 Generación automática de stubs desde WSDL AFIP -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>jaxws-maven-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <!-- WSFEv1 -->
-          <execution>
-            <id>generate-wsfev1</id>
-            <goals><goal>wsimport</goal></goals>
-            <configuration>
-              <wsdlUrls>
-                <wsdlUrl>https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL</wsdlUrl>
-              </wsdlUrls>
-              <packageName>ar.gov.afip.dif.FEV1</packageName>
-              <sourceDestDir>${project.basedir}/src/main/java</sourceDestDir>
-              <keep>true</keep>
-              <xnocompile>true</xnocompile>
-            </configuration>
-          </execution>
-
-          <!-- WSAA -->
-          <execution>
-            <id>generate-wsaa</id>
-            <goals><goal>wsimport</goal></goals>
-            <configuration>
-              <wsdlUrls>
-                <wsdlUrl>https://wsaahomo.afip.gov.ar/ws/services/LoginCms?WSDL</wsdlUrl>
-              </wsdlUrls>
-              <packageName>ar.gov.afip.wsaa</packageName>
-              <sourceDestDir>${project.basedir}/src/main/java</sourceDestDir>
-              <keep>true</keep>
-              <xnocompile>true</xnocompile>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 

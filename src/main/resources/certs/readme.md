@@ -24,9 +24,8 @@ openssl x509 -noout -modulus -in validarcae_62e86fd805ab32f0.crt | openssl md5
 openssl rsa  -noout -modulus -in arca-java.key | openssl md5
 
 Unir certificados
-En 1 solo archivo unir el crt que se baja de afip con los pem de AFIPRoot y Computadores
+openssl pkcs12 -export -inkey arca-java.key -in validarcae_62e86fd805ab32f0.crt -certfile Computadores.cacert_2024-2035.crt -certfile AFIPRootCA2.cacert_2015-2035.crt -out arca-java-prod.p12 -name "arca-prod" -password pass:AddocArca2025!
 
-openssl pkcs12 -export -inkey arca-java.key -in addoc_completo.pem -out arca-java.p12 -name "arca" -password pass:AddocArca2025!
 
 Validar salida
 openssl pkcs12 -info -in arca-java.p12 -nokeys

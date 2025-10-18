@@ -23,7 +23,7 @@ public class AfipController {
     /**
      * 🔹 Valida un comprobante ante AFIP WSFEv1 usando WSAA.
      */
-    @GetMapping("/validate")
+    @GetMapping("/validateInvoice")
     public ResponseEntity<InvoiceValidationResult> validateInvoice(
             @RequestParam String cuit,
             @RequestParam int tipo,

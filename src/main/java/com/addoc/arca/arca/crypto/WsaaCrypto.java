@@ -91,7 +91,7 @@ public class WsaaCrypto {
         CMSTypedData msg = new CMSProcessableByteArray(data);
 
         // 🔸 AFIP requiere SHA1withRSA
-        ContentSigner signer = new JcaContentSignerBuilder("sha512RSA")
+        ContentSigner signer = new JcaContentSignerBuilder("SHA512withRSA")
                 .setProvider("BC")
                 .build(privateKey);
 
@@ -103,10 +103,13 @@ public class WsaaCrypto {
         gen.addCertificate(new X509CertificateHolder(x509.getEncoded()));
 
         // Modo detached (el XML no se incluye dentro del CMS)
-        CMSSignedData signed = gen.generate(msg, false);
+        CMSSignedData signed = gen.generate(msg, true);
         byte[] encoded = signed.getEncoded();
 
-        String base64 = Base64.getEncoder().encodeToString(encoded);
+        String base64 = Base64.getEncoder()
+        .encodeToString(encoded)
+        .replaceAll("\\s+", "")
+        .trim();
         System.out.println("✅ [WsaaCrypto] CMS firmado correctamente (" + base64.length() + " bytes Base64)");
 
         return base64;

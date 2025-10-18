@@ -91,7 +91,7 @@ public class WsaaClient {
                 return dummy;
             }
 
-            disableSslVerification();
+            //disableSslVerification();
 
             String tra = WsaaCrypto.buildTRA(service, 12 * 60);
             String cmsB64 = WsaaCrypto.signCmsDetachedBase64(tra, p12Path, p12Password, p12Alias);
