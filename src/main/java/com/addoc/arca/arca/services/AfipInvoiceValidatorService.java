@@ -82,6 +82,74 @@ public class AfipInvoiceValidatorService {
         return result;
     }
 
+        /**
+     * 🔹 Valida un CAE contra AFIP WSFEv1 (requiere tipo, punto de venta y número)
+     * Usa WSAA para autenticarse y compara el CAE informado con el autorizado por AFIP.
+     */
+    public InvoiceValidationResult validateCaeOnline(String cuitEmisor, int tipo, int ptoVta, int nroCbte, String caeInformado) {
+        InvoiceValidationResult result = new InvoiceValidationResult();
+        result.setEmisorCuit(cuitEmisor);
+        result.setTipoComprobante(tipo);
+        result.setPuntoVenta(ptoVta);
+        result.setNumeroComprobante(nroCbte);
+        result.setCae(caeInformado);
+
+        try {
+            // 🔐 Obtener TA (token/sign) mediante WSAA
+            WsaaAuth ta = wsaaClient.getOrRefreshTA();
+
+            // 🧩 Instanciar cliente SOAP WSFEv1
+            URL url = new URL(WSDL_URL);
+            QName qname = new QName(NAMESPACE_URI, SERVICE_NAME);
+            Service service = Service.create(url, qname);
+            ar.gov.afip.dif.FEV1.ServiceSoap port = service.getPort(ar.gov.afip.dif.FEV1.ServiceSoap.class);
+
+            // 📄 Autenticación
+            ar.gov.afip.dif.FEV1.FEAuthRequest auth = new ar.gov.afip.dif.FEV1.FEAuthRequest();
+            auth.setToken(ta.getToken());
+            auth.setSign(ta.getSign());
+            auth.setCuit(Long.parseLong(cuitEmisor));
+
+            // 🔍 Consulta del comprobante
+            ar.gov.afip.dif.FEV1.FECompConsultaReq req = new ar.gov.afip.dif.FEV1.FECompConsultaReq();
+            req.setCbteTipo(tipo);
+            req.setPtoVta(ptoVta);
+            req.setCbteNro(nroCbte);
+
+            ar.gov.afip.dif.FEV1.FECompConsultaResponse resp = port.feCompConsultar(auth, req);
+
+            if (resp != null && resp.getResultGet() != null) {
+                var data = resp.getResultGet();
+                String caeAfip = data.getCodAutorizacion();
+                LocalDate vto = LocalDate.parse(data.getFchVto(), DateTimeFormatter.BASIC_ISO_DATE);
+
+                result.setCaeExpiration(vto);
+                result.setValid(caeAfip != null && caeAfip.equals(caeInformado));
+
+                if (result.isValid()) {
+                    boolean vigente = LocalDate.now().isBefore(vto.plusDays(1));
+                    result.setValid(vigente);
+                    result.setMessage(vigente
+                            ? "✅ CAE válido y vigente según AFIP"
+                            : "⚠️ CAE válido pero vencido (" + vto + ")");
+                } else {
+                    result.setValid(false);
+                    result.setMessage("❌ CAE no coincide con el comprobante autorizado por AFIP");
+                }
+            } else {
+                result.setValid(false);
+                result.setMessage("❌ Comprobante no encontrado o no autorizado en AFIP");
+            }
+
+        } catch (Exception e) {
+            result.setValid(false);
+            result.setMessage("Error al validar CAE con AFIP: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+
     /**
      * 🧩 Decodifica localmente el QR de AFIP sin llamar al sitio web.
      * Ideal para validaciones internas o ambientes sin Internet.
@@ -107,6 +175,8 @@ public class AfipInvoiceValidatorService {
             throw new IllegalArgumentException("Formato de QR inválido o Base64 corrupto");
         }
     }
+
+    
 
 
     /**

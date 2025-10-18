@@ -45,7 +45,8 @@ public class AfipController {
     /**
      * 🔹 Valida un comprobante a partir de su QR público.
      * Ejemplo:
-     * GET /api/afip/validate-qr?qr=https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsIm...
+     * GET
+     * /api/afip/validate-qr?qr=https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsIm...
      */
     @GetMapping("/validate-qr")
     public ResponseEntity<?> validateQr(@RequestParam String qr) {
@@ -58,22 +59,33 @@ public class AfipController {
         }
     }
 
-    /**
- * 🔹 Decodifica localmente un QR de AFIP sin conexión.
- * Ejemplo:
- * GET /api/afip/decode-qr?qr=https://www.afip.gob.ar/fe/qr/?p=...
- */
-@GetMapping("/decode-qr")
-public ResponseEntity<?> decodeQr(@RequestParam String qr) {
-    try {
-        JsonNode data = validatorService.validateQrOffline(qr);
-        return ResponseEntity.ok(data);
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", e.getMessage()));
-    }
-}
+    @GetMapping("/validate-cae-online")
+    public ResponseEntity<InvoiceValidationResult> validateCaeOnline(
+            @RequestParam String cuit,
+            @RequestParam int tipo,
+            @RequestParam int ptoVta,
+            @RequestParam int nro,
+            @RequestParam String cae) {
 
+        InvoiceValidationResult result = validatorService.validateCaeOnline(cuit, tipo, ptoVta, nro, cae);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 🔹 Decodifica localmente un QR de AFIP sin conexión.
+     * Ejemplo:
+     * GET /api/afip/decode-qr?qr=https://www.afip.gob.ar/fe/qr/?p=...
+     */
+    @GetMapping("/decode-qr")
+    public ResponseEntity<?> decodeQr(@RequestParam String qr) {
+        try {
+            JsonNode data = validatorService.validateQrOffline(qr);
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 
     /**
      * 🔹 Endpoint dummy para probar conectividad WSFEv1
