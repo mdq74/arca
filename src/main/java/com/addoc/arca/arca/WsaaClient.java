@@ -79,7 +79,7 @@ public class WsaaClient {
         }
     }
 
-    /** 🔹 LoginCms: obtiene Token & Sign del WSAA */
+    /** 🔹 LoginCms: obtiene Token & Sign del WSAA (maneja Fault SOAP) */
     /** 🔹 LoginCms: obtiene Token & Sign del WSAA (maneja Fault SOAP) */
     public WsaaAuth loginCms() {
         try {
@@ -93,6 +93,8 @@ public class WsaaClient {
             }
 
             String tra = WsaaCrypto.buildTRA(service, 12 * 60);
+            log.debug("📄 XML TRA generado:\n{}", tra);
+
             String cmsB64 = WsaaCrypto.signCmsDetachedBase64(tra, p12Path, p12Password, p12Alias);
 
             log.info("📤 Enviando LoginCms a AFIP: {}", endpoint);
@@ -100,17 +102,22 @@ public class WsaaClient {
             SOAPMessage req = buildSoapLoginCms(cmsB64);
             req.getMimeHeaders().addHeader("SOAPAction", "loginCms");
 
+            // 🧩 Mostrar el XML que realmente se envía al WSAA
+            ByteArrayOutputStream reqOut = new ByteArrayOutputStream();
+            req.writeTo(reqOut);
+            String xmlReq = reqOut.toString(StandardCharsets.UTF_8);
+            log.info("📦 XML Enviado a WSAA:\n{}", xmlReq);
+
             SOAPConnection con = SOAPConnectionFactory.newInstance().createConnection();
             SOAPMessage resp = con.call(req, endpoint);
             con.close();
 
-            // --- Capturamos toda la respuesta en texto para diagnóstico
+            // 🧩 Mostrar la respuesta completa
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             resp.writeTo(out);
             String xmlResp = out.toString(StandardCharsets.UTF_8);
             log.info("📥 Respuesta WSAA:\n{}", xmlResp);
 
-            // --- Si contiene un Fault SOAP, lo procesamos
             if (xmlResp.contains("<soapenv:Fault") || xmlResp.contains("<faultstring>")) {
                 String fault = extractFaultString(xmlResp);
                 log.error("❌ WSAA devolvió Fault SOAP: {}", fault);
@@ -130,7 +137,6 @@ public class WsaaClient {
             return parseTA(taXml);
 
         } catch (Exception e) {
-            log.error("❌ WSAA LoginCms error", e);
             throw new RuntimeException("WSAA LoginCms error: " + e.getMessage(), e);
         }
     }
