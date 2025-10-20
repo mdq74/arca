@@ -88,16 +88,22 @@ public class AfipController {
     }
 
     /**
-     * 🔹 Endpoint dummy para probar conectividad WSFEv1
+     * 🔹 Endpoint dummy para probar conectividad WSFEv1.
+     * Devuelve el estado de los tres servidores de AFIP.
      */
     @GetMapping("/dummy")
-    public ResponseEntity<String> dummy() {
+    public ResponseEntity<Map<String, Object>> dummy() {
         try {
-            InvoiceValidationResult result = validatorService.validateInvoice("20123456789", 1, 1, 1234);
-            return ResponseEntity.ok("✅ Dummy AFIP WSFEv1: " + result);
+            String result = validatorService.callFedummy();
+            boolean ok = result.contains("OK");
+            return ResponseEntity.status(ok ? HttpStatus.OK : HttpStatus.BAD_GATEWAY)
+                    .body(Map.of(
+                            "status", ok ? "OK" : "FAIL",
+                            "message", result));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ Error dummy AFIP: " + e.getMessage());
+                    .body(Map.of("error", e.getMessage()));
         }
     }
+
 }

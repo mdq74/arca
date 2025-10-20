@@ -8,6 +8,7 @@ import java.util.Base64;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.addoc.arca.arca.WsaaAuth;
@@ -26,6 +27,9 @@ public class AfipInvoiceValidatorService {
     private static final String SERVICE_NAME = "Service";
     private static final String AFIP_QR_BASE_URL = "https://www.afip.gob.ar/fe/qr/";
 
+    @Value("${wsfe.url}")
+    private String wsfeUrl;
+
     public AfipInvoiceValidatorService(WsaaClient wsaaClient) {
         this.wsaaClient = wsaaClient;
     }
@@ -42,7 +46,7 @@ public class AfipInvoiceValidatorService {
 
         try {
             WsaaAuth ta = wsaaClient.getOrRefreshTA();
-            URL url = new URL(WSDL_URL);
+            URL url = new URL(wsfeUrl);
             QName qname = new QName(NAMESPACE_URI, SERVICE_NAME);
             Service service = Service.create(url, qname);
             ar.gov.afip.dif.FEV1.ServiceSoap port = service.getPort(ar.gov.afip.dif.FEV1.ServiceSoap.class);
@@ -176,7 +180,33 @@ public class AfipInvoiceValidatorService {
         }
     }
 
-    
+        /**
+     * 🔹 Llama al método FEDummy del WSFEv1 para probar conectividad y autenticación.
+     */
+    public String callFedummy() {
+        try {
+            // 🔐 Obtener TA (token/sign)
+            WsaaAuth ta = wsaaClient.getOrRefreshTA();
+
+            // 🧩 Instanciar cliente SOAP WSFEv1
+            URL url = new URL(wsfeUrl);
+            QName qname = new QName(NAMESPACE_URI, SERVICE_NAME);
+            Service service = Service.create(url, qname);
+            ar.gov.afip.dif.FEV1.ServiceSoap port = service.getPort(ar.gov.afip.dif.FEV1.ServiceSoap.class);
+
+            // 📡 Llamar al método dummy
+            ar.gov.afip.dif.FEV1.DummyResponse resp = port.feDummy();
+
+            String app = resp.getAppServer();
+            String db = resp.getDbServer();
+            String auth = resp.getAuthServer();
+
+            return String.format("AppServer=%s | DbServer=%s | AuthServer=%s", app, db, auth);
+        } catch (Exception e) {
+            return "❌ Error en FEDummy: " + e.getMessage();
+        }
+    }
+
 
 
     /**
@@ -225,4 +255,5 @@ public class AfipInvoiceValidatorService {
             return input.substring(input.indexOf("?p=") + 3);
         return input.trim();
     }
+    
 }
